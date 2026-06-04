@@ -12,9 +12,12 @@ This library follows the project ownership rules:
 
 Current modules are generic interfaces only:
 
-- `gps_module`: location, accuracy, freshness, and health snapshot.
+- `gps_module`: location, accuracy, freshness, and UART-fed NMEA snapshot.
 - `ultrasonic_array`: four-channel distance snapshot and timeout state.
 - `camera_module`: camera availability and frame capture status.
 - `telemetry_encoder`: stable JSON encoder for cloud upload payloads.
 
-Concrete device models are intentionally not fixed yet.
+Most concrete device models are intentionally not fixed yet. The GPS path now
+includes a validated PlatformIO Arduino implementation with SR2631Z3-compatible
+defaults while keeping the public API generic. See `GPS_MODULE.md` for wiring,
+runtime behavior, and the standalone test app.

@@ -10,6 +10,7 @@
 apps/
   dispatch-web/       静态调度中心演示页面。
   edge-cone-node/     单个交通锥节点的 PlatformIO 固件项目。
+  gps-test-pio/       独立的 PlatformIO GPS UART 台架测试项目。
   pi-vehicle-simulator/
                       树莓派车辆端导航模拟器。
 components/
@@ -34,6 +35,13 @@ docs/
 ```powershell
 cd apps/edge-cone-node
 pio run -e esp32dev
+```
+
+GPS 台架测试：
+
+```powershell
+cd apps/gps-test-pio
+pio run -e esp32-s3-devkitc-1
 ```
 
 云端 API：
