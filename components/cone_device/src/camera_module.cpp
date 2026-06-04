@@ -1,6 +1,8 @@
 #include "cone_device/camera_module.h"
 
-#include "sdkconfig.h"
+#ifndef CONE_DEVICE_ENABLE_CAMERA
+#define CONE_DEVICE_ENABLE_CAMERA 1
+#endif
 
 namespace cone_device {
 namespace {
@@ -8,7 +10,7 @@ CameraStatus g_status;
 }
 
 bool setup_camera(const CameraModuleConfig&) {
-#if CONFIG_CONE_DEVICE_ENABLE_CAMERA
+#if CONE_DEVICE_ENABLE_CAMERA
   g_status.enabled = true;
   g_status.initialized = true;
   g_status.last_error.clear();
@@ -21,7 +23,7 @@ bool setup_camera(const CameraModuleConfig&) {
 }
 
 void tick_camera() {
-#if CONFIG_CONE_DEVICE_ENABLE_CAMERA
+#if CONE_DEVICE_ENABLE_CAMERA
   // Concrete capture implementation is added by the camera hardware owner.
 #endif
 }

@@ -5,16 +5,18 @@
 #include "cone_device/telemetry_encoder.h"
 #include "cone_device/ultrasonic_array.h"
 
-#include "esp_log.h"
-#include "esp_timer.h"
-#include "sdkconfig.h"
+#include <Arduino.h>
+
+#ifndef CONE_NODE_ID
+#define CONE_NODE_ID "cone-demo-001"
+#endif
+
+#ifndef CONE_NODE_TELEMETRY_INTERVAL_MS
+#define CONE_NODE_TELEMETRY_INTERVAL_MS 3000
+#endif
 
 namespace {
-constexpr char kTag[] = "cone_node_app";
-
-uint32_t millis() {
-  return static_cast<uint32_t>(esp_timer_get_time() / 1000ULL);
-}
+constexpr const char* kTag = "cone_node_app";
 }  // namespace
 
 void ConeNodeApp::setup() {
@@ -27,11 +29,11 @@ void ConeNodeApp::setup() {
   const bool camera_ok = cone_device::setup_camera(camera_config);
 
   initialized_ = gps_ok || ultrasonic_ok || camera_ok;
-  ESP_LOGI(kTag,
-           "hardware setup complete gps=%d ultrasonic=%d camera=%d",
-           gps_ok,
-           ultrasonic_ok,
-           camera_ok);
+  Serial.printf("[%s] hardware setup complete gps=%d ultrasonic=%d camera=%d\n",
+                kTag,
+                gps_ok,
+                ultrasonic_ok,
+                camera_ok);
 }
 
 void ConeNodeApp::tick() {
@@ -43,8 +45,8 @@ void ConeNodeApp::tick() {
   cone_device::tick_ultrasonic_array();
   cone_device::tick_camera();
 
-  const uint32_t now = millis();
-  if (now - last_publish_ms_ >= CONFIG_CONE_NODE_TELEMETRY_INTERVAL_MS) {
+  const uint32_t now = ::millis();
+  if (now - last_publish_ms_ >= CONE_NODE_TELEMETRY_INTERVAL_MS) {
     last_publish_ms_ = now;
     publish_telemetry();
   }
@@ -52,15 +54,15 @@ void ConeNodeApp::tick() {
 
 void ConeNodeApp::publish_telemetry() {
   cone_device::TelemetrySnapshot snapshot;
-  snapshot.cone_id = CONFIG_CONE_NODE_ID;
-  snapshot.uptime_ms = millis();
+  snapshot.cone_id = CONE_NODE_ID;
+  snapshot.uptime_ms = ::millis();
   snapshot.gps = cone_device::gps_status();
   snapshot.ultrasonic = cone_device::ultrasonic_array_status();
   snapshot.camera = cone_device::camera_status();
 
   const std::string payload = cone_device::encode_telemetry_json(snapshot);
 
-  // Network upload is intentionally a later adapter. Keep this app-level seam
-  // stable while Wi-Fi/MQTT/HTTP implementation is assigned.
-  ESP_LOGI(kTag, "telemetry ready: %s", payload.c_str());
+  // Network upload is intentionally a later adapter. Keep this app-level
+  // boundary stable while Wi-Fi/MQTT/HTTP implementation is assigned.
+  Serial.printf("[%s] telemetry ready: %s\n", kTag, payload.c_str());
 }

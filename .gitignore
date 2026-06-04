@@ -11,11 +11,10 @@ __pycache__/
 .venv/
 .pytest_cache/
 
-# ESP-IDF
-build/
-sdkconfig
-dependencies.lock
-managed_components/
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
 
 # Editors and OS
 .vscode/

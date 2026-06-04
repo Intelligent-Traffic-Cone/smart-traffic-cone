@@ -1,11 +1,12 @@
 # cone_device
 
-Reusable hardware-facing modules for the smart traffic cone edge node.
+Reusable PlatformIO Arduino library for smart traffic cone hardware-facing
+modules.
 
-This component follows the same ownership rule used by the LunarEdu reference:
+This library follows the project ownership rules:
 
 - Apps own product orchestration and business meaning.
-- Components own reusable hardware capabilities.
+- Libraries own reusable hardware capabilities.
 - BSP configuration owns concrete pins and board resources.
 - Disabled modules still link and report `disabled`.
 

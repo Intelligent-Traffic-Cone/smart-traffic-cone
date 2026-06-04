@@ -1,6 +1,8 @@
 #include "cone_device/gps_module.h"
 
-#include "sdkconfig.h"
+#ifndef CONE_DEVICE_ENABLE_GPS
+#define CONE_DEVICE_ENABLE_GPS 1
+#endif
 
 namespace cone_device {
 namespace {
@@ -8,7 +10,7 @@ GpsStatus g_status;
 }
 
 bool setup_gps(const GpsModuleConfig&) {
-#if CONFIG_CONE_DEVICE_ENABLE_GPS
+#if CONE_DEVICE_ENABLE_GPS
   g_status.enabled = true;
   g_status.initialized = true;
   g_status.last_error.clear();
@@ -21,7 +23,7 @@ bool setup_gps(const GpsModuleConfig&) {
 }
 
 void tick_gps() {
-#if CONFIG_CONE_DEVICE_ENABLE_GPS
+#if CONE_DEVICE_ENABLE_GPS
   // Concrete GPS parsing is added by the hardware owner for the selected module.
 #endif
 }

@@ -52,7 +52,8 @@ _Avoid_: product behavior, sensor algorithm
 ## Decisions
 
 - The repository root is a workspace and does not own a single build system.
-- ESP32 firmware is implemented as an ESP-IDF app under `apps/edge-cone-node`.
+- ESP32 firmware is implemented as a PlatformIO Arduino project under
+  `apps/edge-cone-node`.
 - Hardware model names remain unspecified in the first skeleton; interfaces are
   generic until the team confirms concrete modules.
 - The vehicle side is documented as an interface contract only in this version.

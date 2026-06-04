@@ -18,12 +18,19 @@ Check cloud API syntax:
 python -m py_compile .\services\cloud-api\app\main.py .\services\cloud-api\app\models.py .\services\cloud-api\app\store.py
 ```
 
-Build firmware after ESP-IDF is installed and exported:
+Build firmware after PlatformIO is installed:
 
 ```powershell
 cd apps\edge-cone-node
-idf.py build
+pio run -e esp32dev
 ```
 
-The current workspace root is not an ESP-IDF project; run firmware commands
+Upload firmware to a connected board:
+
+```powershell
+cd apps\edge-cone-node
+pio run -e esp32dev -t upload
+```
+
+The current workspace root is not a PlatformIO project; run firmware commands
 from `apps/edge-cone-node`.

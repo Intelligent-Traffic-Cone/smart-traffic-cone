@@ -20,9 +20,9 @@ def main() -> None:
     for path in [
         "README.md",
         "CONTEXT.md",
-        "apps/edge-cone-node/CMakeLists.txt",
+        "apps/edge-cone-node/platformio.ini",
         "apps/dispatch-web/index.html",
-        "components/cone_device/CMakeLists.txt",
+        "components/cone_device/library.json",
         "services/cloud-api/app/main.py",
         "contracts/telemetry.schema.json",
         "contracts/examples/telemetry.sample.json",

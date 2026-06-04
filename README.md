@@ -12,7 +12,7 @@ warnings for maps or vehicle-side systems.
 ```text
 apps/
   dispatch-web/       Static dispatch-center demo.
-  edge-cone-node/     ESP-IDF firmware project for one cone node.
+  edge-cone-node/     PlatformIO firmware project for one cone node.
 components/
   cone_device/        Reusable hardware module interfaces.
 services/
@@ -25,8 +25,8 @@ docs/
   product/            Product reports and design documents.
 ```
 
-The repository root is a workspace only. It is not an ESP-IDF project and does
-not require a top-level CMake build.
+The repository root is a workspace only. It is not a PlatformIO firmware
+project. Run firmware commands from `apps/edge-cone-node`.
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ Firmware:
 
 ```powershell
 cd apps/edge-cone-node
-idf.py build
+pio run -e esp32dev
 ```
 
 Cloud API:

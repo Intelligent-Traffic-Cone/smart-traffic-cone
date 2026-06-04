@@ -1,6 +1,8 @@
 #include "cone_device/ultrasonic_array.h"
 
-#include "sdkconfig.h"
+#ifndef CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
+#define CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY 1
+#endif
 
 namespace cone_device {
 namespace {
@@ -8,7 +10,7 @@ UltrasonicArrayStatus g_status;
 }
 
 bool setup_ultrasonic_array(const UltrasonicArrayConfig&) {
-#if CONFIG_CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
+#if CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
   g_status.enabled = true;
   g_status.initialized = true;
   g_status.last_error.clear();
@@ -24,7 +26,7 @@ bool setup_ultrasonic_array(const UltrasonicArrayConfig&) {
 }
 
 void tick_ultrasonic_array() {
-#if CONFIG_CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
+#if CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
   // Concrete ranging implementation is added after the ultrasonic model is known.
 #endif
 }

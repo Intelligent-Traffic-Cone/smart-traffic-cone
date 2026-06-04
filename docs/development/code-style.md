@@ -2,7 +2,7 @@
 
 ## C and C++
 
-- Use C++17-compatible code for ESP-IDF app and components.
+- Use C++17-compatible code for PlatformIO firmware and cone device components.
 - Public hardware headers live under `components/cone_device/include`.
 - Private implementation stays under `components/cone_device/src`.
 - Public status structs return snapshots, not references to mutable state.

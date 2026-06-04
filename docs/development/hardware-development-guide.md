@@ -24,18 +24,18 @@ The first modules are:
 - `camera_module`: camera availability and frame status.
 - `telemetry_encoder`: structured cloud upload payload.
 
-## Kconfig
+## PlatformIO Flags
 
-Each optional module owns an enable flag:
+Each optional module owns a PlatformIO build flag:
 
 ```text
-CONFIG_CONE_DEVICE_ENABLE_GPS
-CONFIG_CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
-CONFIG_CONE_DEVICE_ENABLE_CAMERA
+CONE_DEVICE_ENABLE_GPS
+CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
+CONE_DEVICE_ENABLE_CAMERA
 ```
 
 Disabled modules must still link and return a status with `last_error` set to
-`disabled`.
+`disabled`. Set these flags in `apps/edge-cone-node/platformio.ini`.
 
 ## BSP and Wiring
 
@@ -51,6 +51,7 @@ app-level config when hardware is finalized:
 
 ## Test Requirements
 
-- Build `apps/edge-cone-node` with all modules enabled.
-- Build at least one app or config with modules disabled to confirm stubs link.
+- Run `pio run -e esp32dev` in `apps/edge-cone-node` with all modules enabled.
+- Run at least one PlatformIO environment or config with modules disabled to
+  confirm stubs link.
 - For real hardware PRs, document wiring, sample logs, and failure modes.
