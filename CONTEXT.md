@@ -54,6 +54,7 @@ _Avoid_: product behavior, sensor algorithm
 - The repository root is a workspace and does not own a single build system.
 - ESP32 firmware is implemented as a PlatformIO Arduino project under
   `apps/edge-cone-node`.
-- Hardware model names remain unspecified in the first skeleton; interfaces are
-  generic until the team confirms concrete modules.
+- Most hardware model names remain unspecified; interfaces stay generic until
+  the team confirms concrete modules. The GPS path now has a validated
+  SR2631Z3-compatible UART/NMEA implementation behind the generic interface.
 - The vehicle side is documented as an interface contract only in this version.

@@ -13,6 +13,7 @@ warnings for maps or vehicle-side systems.
 apps/
   dispatch-web/       Static dispatch-center demo.
   edge-cone-node/     PlatformIO firmware project for one cone node.
+  gps-test-pio/       Standalone PlatformIO GPS UART bench test.
 components/
   cone_device/        Reusable hardware module interfaces.
 services/
@@ -35,6 +36,13 @@ Firmware:
 ```powershell
 cd apps/edge-cone-node
 pio run -e esp32dev
+```
+
+GPS bench test:
+
+```powershell
+cd apps/gps-test-pio
+pio run -e esp32-s3-devkitc-1
 ```
 
 Cloud API:

@@ -25,6 +25,13 @@ cd apps\edge-cone-node
 pio run -e esp32dev
 ```
 
+Build the standalone GPS bench app after GPS changes:
+
+```powershell
+cd apps\gps-test-pio
+pio run -e esp32-s3-devkitc-1
+```
+
 Upload firmware to a connected board:
 
 ```powershell

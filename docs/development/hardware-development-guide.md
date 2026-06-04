@@ -45,13 +45,15 @@ app-level config when hardware is finalized:
 | Hardware | Current status | Notes |
 | --- | --- | --- |
 | ESP32 controller | planned | exact board variant pending |
-| Positioning module | generic GPS interface | model pending |
+| Positioning module | SR2631Z3-compatible UART/NMEA path | defaults are UART1 TX17 RX18 @ 115200; override in config if board differs |
 | Ultrasonic modules | four-channel interface | model pending |
 | Camera | generic camera interface | model pending |
 
 ## Test Requirements
 
 - Run `pio run -e esp32dev` in `apps/edge-cone-node` with all modules enabled.
+- Run `pio run -e esp32-s3-devkitc-1` in `apps/gps-test-pio` when changing GPS
+  parsing, UART defaults, or wiring guidance.
 - Run at least one PlatformIO environment or config with modules disabled to
   confirm stubs link.
 - For real hardware PRs, document wiring, sample logs, and failure modes.
