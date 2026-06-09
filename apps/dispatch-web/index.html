@@ -42,6 +42,10 @@
           <span class="nav-icon">06</span>
           数据分析
         </button>
+        <button class="nav-item" data-view="vehicles">
+          <span class="nav-icon">07</span>
+          车辆协同
+        </button>
       </nav>
 
       <section class="scenario-box">
@@ -65,6 +69,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>
           </button>
           <button class="text-button secondary" id="locateBtn">当前位置</button>
+          <button class="text-button secondary" id="resetDemoBtn">重置演示数据</button>
           <button class="text-button" id="nextStepBtn">下一步演示</button>
         </div>
       </header>
@@ -246,6 +251,30 @@
             <p class="eyebrow">Review Report</p>
             <h3>复盘报告摘要</h3>
             <div id="reviewReport" class="report-text"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view-section" id="view-vehicles" data-view-panel="vehicles">
+        <div class="vehicle-grid">
+          <section class="table-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Vehicle Sync</p>
+                <h3>车端导航影响</h3>
+              </div>
+              <span class="status-pill small" id="apiStatus">API 检测中</span>
+            </div>
+            <div class="vehicle-sync-summary" id="vehicleSyncSummary"></div>
+          </section>
+          <section class="table-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Risk Segments</p>
+                <h3>风险路段与车道建议</h3>
+              </div>
+            </div>
+            <div class="event-list" id="riskSegmentList"></div>
           </section>
         </div>
       </section>

@@ -33,3 +33,19 @@ specified.
 Cloud publishes vehicle warnings only after a Road Event has an active boundary
 and enough freshness or operator confirmation. The contract is documented in
 `contracts/vehicle-warning.md`.
+
+## Vehicle Navigation Flow
+
+The Raspberry Pi vehicle simulator uses HTTP polling in the first version:
+
+```http
+POST /api/vehicles/{vehicle_id}/navigation-sessions
+POST /api/vehicles/{vehicle_id}/navigation-sessions/{session_id}/tick
+```
+
+The start request creates a navigation session and returns dispatch risk
+segments. During simulated driving, the vehicle sends its current location,
+speed, and lane; the cloud returns route adjustment, lane guidance, nearby cone
+summaries, and active risk segments.
+
+Payloads are documented in `contracts/vehicle-navigation.md`.

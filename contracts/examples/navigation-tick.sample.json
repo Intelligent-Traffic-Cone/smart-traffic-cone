@@ -1,0 +1,12 @@
+{
+  "session_id": "nav-000001",
+  "location": {
+    "longitude": 116.39744,
+    "latitude": 39.90931,
+    "accuracy_m": 3,
+    "has_fix": true
+  },
+  "speed_kph": 28,
+  "current_lane": "right_lane",
+  "heading_deg": 110
+}

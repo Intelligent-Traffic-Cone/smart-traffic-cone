@@ -15,6 +15,8 @@ struct TelemetrySnapshot {
   GpsStatus gps;
   UltrasonicArrayStatus ultrasonic;
   CameraStatus camera;
+  std::string network_status = "unknown";
+  uint32_t upload_failure_count = 0;
 };
 
 std::string encode_telemetry_json(const TelemetrySnapshot& snapshot);

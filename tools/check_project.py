@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import py_compile
 import re
+import sys
 from pathlib import Path
 
 
@@ -22,10 +23,15 @@ def main() -> None:
         "CONTEXT.md",
         "apps/edge-cone-node/platformio.ini",
         "apps/dispatch-web/index.html",
+        "apps/pi-vehicle-simulator/index.html",
+        "apps/pi-vehicle-simulator/server.py",
         "components/cone_device/library.json",
         "services/cloud-api/app/main.py",
         "contracts/telemetry.schema.json",
+        "contracts/vehicle-navigation.md",
         "contracts/examples/telemetry.sample.json",
+        "contracts/examples/navigation-session.sample.json",
+        "contracts/examples/navigation-tick.sample.json",
     ]:
         require(path)
 
@@ -44,13 +50,22 @@ def main() -> None:
 
     json.loads(require("contracts/telemetry.schema.json").read_text(encoding="utf-8"))
     json.loads(require("contracts/examples/telemetry.sample.json").read_text(encoding="utf-8"))
+    nav_session = json.loads(require("contracts/examples/navigation-session.sample.json").read_text(encoding="utf-8"))
+    nav_tick = json.loads(require("contracts/examples/navigation-tick.sample.json").read_text(encoding="utf-8"))
 
     for path in [
         "services/cloud-api/app/main.py",
         "services/cloud-api/app/models.py",
         "services/cloud-api/app/store.py",
+        "apps/pi-vehicle-simulator/server.py",
     ]:
         py_compile.compile(str(require(path)), doraise=True)
+
+    sys.path.insert(0, str(ROOT / "services" / "cloud-api"))
+    from app.models import NavigationSessionIn, VehiclePositionTickIn
+
+    NavigationSessionIn.model_validate(nav_session)
+    VehiclePositionTickIn.model_validate(nav_tick)
 
     print("project skeleton checks passed")
 

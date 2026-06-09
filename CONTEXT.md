@@ -34,6 +34,17 @@ A cloud-published warning contract for map or vehicle-side systems after a Road
 Event is fresh enough or operator-confirmed.
 _Avoid_: in-firmware alarm, local buzzer, dispatch task
 
+**Vehicle Navigation Session**:
+A vehicle-side navigation run created by the Raspberry Pi simulator before
+driving. It carries route endpoints, dispatch risk segments, and later dynamic
+advice polling.
+_Avoid_: Road Event, raw map route, one-time warning
+
+**Lane Guidance**:
+Cloud-generated lane-level advice for the vehicle simulator, such as keeping
+lane or preparing a left merge near a Smart Traffic Cone boundary.
+_Avoid_: full autonomous control, firmware risk rule, map display layer
+
 **Device Health**:
 The freshness and operational state of GPS, ultrasonic channels, camera,
 network, battery, and upload quality.
@@ -56,4 +67,5 @@ _Avoid_: product behavior, sensor algorithm
   `apps/edge-cone-node`.
 - Hardware model names remain unspecified in the first skeleton; interfaces are
   generic until the team confirms concrete modules.
-- The vehicle side is documented as an interface contract only in this version.
+- The first runnable vehicle side is a Raspberry Pi simulator under
+  `apps/pi-vehicle-simulator`, using HTTP polling against the cloud API.

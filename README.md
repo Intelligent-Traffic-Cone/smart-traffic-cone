@@ -1,43 +1,42 @@
-# Smart Traffic Cone
+# 智能交通锥
 
-Team workspace for the Intelligent Traffic Cone project.
+智能交通锥项目的团队工作区。
 
-The system uses an ESP32 edge node inside each smart cone to collect positioning,
-four-channel ultrasonic distance, camera, and device-health data. The cloud
-receives telemetry, creates road events and alerts, and publishes confirmed road
-warnings for maps or vehicle-side systems.
+系统在每个智能交通锥内部使用 ESP32 边缘节点，采集定位、四路超声波测距、摄像头和设备健康状态数据。云端接收遥测数据，生成道路事件和告警，并向地图或车端系统发布已确认的道路预警信息。
 
-## Repository Layout
+## 仓库结构
 
 ```text
 apps/
-  dispatch-web/       Static dispatch-center demo.
-  edge-cone-node/     PlatformIO firmware project for one cone node.
+  dispatch-web/       静态调度中心演示页面。
+  edge-cone-node/     单个交通锥节点的 PlatformIO 固件项目。
+  pi-vehicle-simulator/
+                      树莓派车辆端导航模拟器。
 components/
-  cone_device/        Reusable hardware module interfaces.
+  cone_device/        可复用的硬件模块接口。
 services/
-  cloud-api/          FastAPI cloud API skeleton.
+  cloud-api/          FastAPI 云端 API 骨架。
 contracts/
   telemetry.schema.json
   vehicle-warning.md
+  vehicle-navigation.md
 docs/
-  development/        Team development guides.
-  product/            Product reports and design documents.
+  development/        团队开发指南。
+  product/            产品报告和设计文档。
 ```
 
-The repository root is a workspace only. It is not a PlatformIO firmware
-project. Run firmware commands from `apps/edge-cone-node`.
+仓库根目录只是工作区，不是 PlatformIO 固件项目。请在 `apps/edge-cone-node` 目录下运行固件相关命令。
 
-## Quick Start
+## 快速开始
 
-Firmware:
+固件：
 
 ```powershell
 cd apps/edge-cone-node
 pio run -e esp32dev
 ```
 
-Cloud API:
+云端 API：
 
 ```powershell
 cd services/cloud-api
@@ -47,20 +46,30 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Dispatch web:
+调度网页：
 
 ```powershell
 cd apps/dispatch-web
 start index.html
 ```
 
-## Development Boundaries
+树莓派车辆端模拟器：
 
-- `apps/edge-cone-node` owns product orchestration and upload scheduling.
-- `components/cone_device` owns reusable hardware interfaces and module state.
-- `services/cloud-api` owns cloud HTTP API behavior and OpenAPI docs.
-- `contracts` owns wire payloads shared across firmware, cloud, and clients.
-- `docs/development` owns team process, style, and interface change rules.
+```powershell
+cd apps/pi-vehicle-simulator
+python server.py
+```
 
-Do not commit real map keys, Wi-Fi credentials, cloud tokens, or hardware lab
-secrets. Use local config files ignored by git.
+然后打开 `http://127.0.0.1:8090`。车辆端会在导航开始时创建导航会话，并在模拟行驶中通过 HTTP 轮询云端动态建议。
+
+## 开发边界
+
+- `apps/edge-cone-node` 负责产品编排和上传调度。
+- `apps/pi-vehicle-simulator` 负责车辆端导航、路径调整和车道级领航模拟。
+- `apps/dispatch-web` 负责调度中心静态演示和云端 API 数据展示。
+- `components/cone_device` 负责可复用的硬件接口和模块状态。
+- `services/cloud-api` 负责云端 HTTP API 行为和 OpenAPI 文档。
+- `contracts` 负责固件、云端和客户端之间共享的传输载荷。
+- `docs/development` 负责团队流程、代码风格和接口变更规则。
+
+不要提交真实地图密钥、Wi-Fi 凭据、云端令牌或硬件实验室机密。请使用已被 git 忽略的本地配置文件。

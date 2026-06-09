@@ -21,6 +21,21 @@ class ConeStatus(str, Enum):
     offline = "offline"
 
 
+class RoutePreference(str, Enum):
+    fastest = "fastest"
+    avoid_risk = "avoid_risk"
+    shortest = "shortest"
+
+
+class LaneAction(str, Enum):
+    keep_lane = "keep_lane"
+    prepare_left_merge = "prepare_left_merge"
+    merge_left_now = "merge_left_now"
+    prepare_right_merge = "prepare_right_merge"
+    merge_right_now = "merge_right_now"
+    stop_if_unsafe = "stop_if_unsafe"
+
+
 class LocationPayload(BaseModel):
     longitude: float | None = None
     latitude: float | None = None
@@ -82,6 +97,7 @@ class RoadEventIn(BaseModel):
     boundary: list[LocationPayload] = Field(default_factory=list)
     related_cone_ids: list[str] = Field(default_factory=list)
     description: str = ""
+    affected_lanes: list[str] = Field(default_factory=list)
 
 
 class RoadEventRecord(RoadEventIn):
@@ -117,3 +133,96 @@ class ExternalSyncRecord(BaseModel):
     status: str = "queued"
     payload: dict[str, Any] = Field(default_factory=dict)
     synced_at: datetime
+
+
+class RiskSegment(BaseModel):
+    segment_id: str
+    event_id: str
+    road_name: str
+    level: RiskLevel
+    start: LocationPayload
+    end: LocationPayload
+    affected_lanes: list[str] = Field(default_factory=list)
+    suggested_action: str = "slow_down"
+    speed_limit_kph: int | None = Field(default=None, ge=0)
+
+
+class MapConeLayer(BaseModel):
+    cone_id: str
+    status: ConeStatus
+    location: LocationPayload
+    current_risk_level: RiskLevel
+    last_seen_at: datetime | None = None
+
+
+class MapEventLayer(BaseModel):
+    event_id: str
+    event_type: str
+    road_name: str
+    level: RiskLevel
+    status: str
+    boundary: list[LocationPayload] = Field(default_factory=list)
+    affected_lanes: list[str] = Field(default_factory=list)
+    description: str = ""
+
+
+class MapLayersResponse(BaseModel):
+    generated_at: datetime
+    cones: list[MapConeLayer] = Field(default_factory=list)
+    events: list[MapEventLayer] = Field(default_factory=list)
+    risk_segments: list[RiskSegment] = Field(default_factory=list)
+    vehicle_warnings: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class NavigationSessionIn(BaseModel):
+    vehicle_id: str
+    origin: LocationPayload
+    destination: LocationPayload
+    route_preference: RoutePreference = RoutePreference.avoid_risk
+
+
+class NavigationSessionRecord(NavigationSessionIn):
+    session_id: str
+    status: str = "active"
+    started_at: datetime
+    risk_summary: str = ""
+    blocked_boundaries: list[list[LocationPayload]] = Field(default_factory=list)
+    risk_segments: list[RiskSegment] = Field(default_factory=list)
+    avoidance_strategy: str = "follow_dispatch_risk_segments"
+
+
+class VehiclePositionTickIn(BaseModel):
+    session_id: str
+    location: LocationPayload
+    speed_kph: float = Field(default=0, ge=0)
+    current_lane: str = "unknown"
+    heading_deg: float | None = Field(default=None, ge=0, le=360)
+
+
+class NearbyConeSummary(BaseModel):
+    cone_id: str
+    distance_m: float
+    bearing: str = "ahead"
+    status: ConeStatus
+    risk_level: RiskLevel
+    lane_hint: str = ""
+
+
+class LaneGuidance(BaseModel):
+    action: LaneAction
+    target_lane: str
+    reason: str
+    confidence: str = "demo_rule"
+
+
+class VehicleDynamicAdvice(BaseModel):
+    session_id: str
+    vehicle_id: str
+    generated_at: datetime
+    expires_at: datetime
+    risk_level: RiskLevel
+    route_adjustment: str
+    lane_guidance: LaneGuidance
+    nearby_cones: list[NearbyConeSummary] = Field(default_factory=list)
+    active_risk_segments: list[RiskSegment] = Field(default_factory=list)
+    message: str = ""

@@ -27,13 +27,15 @@ void ConeNodeApp::setup() {
   const bool gps_ok = cone_device::setup_gps(gps_config);
   const bool ultrasonic_ok = cone_device::setup_ultrasonic_array(ultrasonic_config);
   const bool camera_ok = cone_device::setup_camera(camera_config);
+  const bool uploader_ok = uploader_.setup();
 
-  initialized_ = gps_ok || ultrasonic_ok || camera_ok;
-  Serial.printf("[%s] hardware setup complete gps=%d ultrasonic=%d camera=%d\n",
+  initialized_ = gps_ok || ultrasonic_ok || camera_ok || uploader_ok;
+  Serial.printf("[%s] setup complete gps=%d ultrasonic=%d camera=%d uploader=%d\n",
                 kTag,
                 gps_ok,
                 ultrasonic_ok,
-                camera_ok);
+                camera_ok,
+                uploader_ok);
 }
 
 void ConeNodeApp::tick() {
@@ -59,10 +61,9 @@ void ConeNodeApp::publish_telemetry() {
   snapshot.gps = cone_device::gps_status();
   snapshot.ultrasonic = cone_device::ultrasonic_array_status();
   snapshot.camera = cone_device::camera_status();
+  snapshot.network_status = uploader_.status();
+  snapshot.upload_failure_count = uploader_.consecutive_failures();
 
   const std::string payload = cone_device::encode_telemetry_json(snapshot);
-
-  // Network upload is intentionally a later adapter. Keep this app-level
-  // boundary stable while Wi-Fi/MQTT/HTTP implementation is assigned.
-  Serial.printf("[%s] telemetry ready: %s\n", kTag, payload.c_str());
+  uploader_.upload(payload);
 }

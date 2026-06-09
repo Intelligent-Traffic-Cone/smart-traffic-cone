@@ -1,0 +1,16 @@
+{
+  "vehicle_id": "pi-car-001",
+  "origin": {
+    "longitude": 116.39658,
+    "latitude": 39.90974,
+    "accuracy_m": 3,
+    "has_fix": true
+  },
+  "destination": {
+    "longitude": 116.39908,
+    "latitude": 39.90866,
+    "accuracy_m": 3,
+    "has_fix": true
+  },
+  "route_preference": "avoid_risk"
+}

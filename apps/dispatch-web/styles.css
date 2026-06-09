@@ -309,6 +309,12 @@ button {
   gap: 16px;
 }
 
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 16px;
+}
+
 .map-panel,
 .detail-panel,
 .timeline-panel,
@@ -380,6 +386,11 @@ button {
 
 .amap-cone.high {
   border-bottom-color: var(--red);
+}
+
+.amap-cone.critical {
+  border-bottom-color: var(--red);
+  filter: drop-shadow(0 0 9px rgba(255, 79, 94, 0.9));
 }
 
 .amap-cone.off {
@@ -554,6 +565,11 @@ button {
   border-bottom-color: var(--red);
 }
 
+.cone.critical::before {
+  border-bottom-color: var(--red);
+  filter: drop-shadow(0 0 9px rgba(255, 79, 94, 0.9));
+}
+
 .cone.off::before {
   border-bottom-color: #6f7a86;
 }
@@ -660,6 +676,8 @@ button {
 .level-high { color: var(--orange); border-color: rgba(255, 125, 77, 0.55); }
 .level-critical { color: var(--red); border-color: rgba(255, 79, 94, 0.6); }
 
+.level-ok { color: var(--green); border-color: rgba(67, 213, 141, 0.45); }
+
 .detail-body {
   display: grid;
   gap: 10px;
@@ -685,7 +703,8 @@ button {
 .event-list,
 .alert-table,
 .device-grid,
-.quality-list {
+.quality-list,
+.vehicle-sync-summary {
   display: grid;
   gap: 10px;
 }

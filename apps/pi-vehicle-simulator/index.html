@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>树莓派车辆端导航模拟器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="vehicle-shell">
+    <header class="vehicle-topbar">
+      <div>
+        <p class="eyebrow">Raspberry Pi Vehicle Simulator</p>
+        <h1>车辆端导航与车道级领航</h1>
+      </div>
+      <div class="top-actions">
+        <span class="status-pill" id="cloudStatus">云端检测中</span>
+        <button id="startNavBtn">开始导航</button>
+        <button id="driveBtn" disabled>模拟行驶</button>
+        <button id="stopBtn" disabled>停止</button>
+      </div>
+    </header>
+
+    <section class="dashboard-grid">
+      <section class="map-surface" aria-label="车辆导航地图">
+        <div class="map-canvas" id="mapCanvas">
+          <div class="grid"></div>
+          <div class="route-line"></div>
+          <div class="risk-band" id="riskBand"></div>
+          <div class="lane left-lane">左车道</div>
+          <div class="lane right-lane">右车道</div>
+          <div class="vehicle-marker" id="vehicleMarker"></div>
+          <div class="cone-layer" id="coneLayer"></div>
+        </div>
+      </section>
+
+      <aside class="control-stack">
+        <section class="panel">
+          <p class="eyebrow">Navigation Session</p>
+          <h2>导航会话</h2>
+          <div class="kv-list" id="sessionPanel"></div>
+        </section>
+
+        <section class="panel emphasis">
+          <p class="eyebrow">Dynamic Advice</p>
+          <h2>实时建议</h2>
+          <div class="advice-card" id="advicePanel"></div>
+        </section>
+
+        <section class="panel">
+          <p class="eyebrow">Nearby Cones</p>
+          <h2>附近智能路锥</h2>
+          <div class="cone-list" id="nearbyConeList"></div>
+        </section>
+
+        <section class="panel">
+          <p class="eyebrow">API Trace</p>
+          <h2>接口状态</h2>
+          <div class="trace-list" id="traceList"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

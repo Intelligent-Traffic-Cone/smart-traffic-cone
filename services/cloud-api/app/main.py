@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
     AlertHandleIn,
@@ -9,16 +10,29 @@ from .models import (
     ConeTelemetryIn,
     ConeTelemetryRecord,
     ExternalSyncRecord,
+    MapLayersResponse,
+    NavigationSessionIn,
+    NavigationSessionRecord,
     RiskLevel,
     RoadEventIn,
     RoadEventRecord,
+    VehicleDynamicAdvice,
+    VehiclePositionTickIn,
 )
 from .store import store
 
 app = FastAPI(
     title="Smart Traffic Cone Cloud API",
-    version="0.1.0",
-    description="Cloud API skeleton for smart traffic cone telemetry and dispatch workflows.",
+    version="0.2.0",
+    description="Cloud API skeleton for smart traffic cone telemetry, dispatch, and vehicle-side navigation advice.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -88,3 +102,39 @@ def sync_event(event_id: str, target_platform: str = "vehicle-warning") -> Exter
     if not record:
         raise HTTPException(status_code=404, detail="event_not_found")
     return record
+
+
+@app.post("/api/demo/reset", response_model=MapLayersResponse)
+def reset_demo() -> MapLayersResponse:
+    return store.reset_demo_data()
+
+
+@app.get("/api/map/layers", response_model=MapLayersResponse)
+def map_layers(bbox: str | None = Query(default=None)) -> MapLayersResponse:
+    return store.map_layers(bbox=bbox)
+
+
+@app.post(
+    "/api/vehicles/{vehicle_id}/navigation-sessions",
+    response_model=NavigationSessionRecord,
+)
+def create_navigation_session(
+    vehicle_id: str,
+    payload: NavigationSessionIn,
+) -> NavigationSessionRecord:
+    return store.create_navigation_session(vehicle_id, payload)
+
+
+@app.post(
+    "/api/vehicles/{vehicle_id}/navigation-sessions/{session_id}/tick",
+    response_model=VehicleDynamicAdvice,
+)
+def vehicle_navigation_tick(
+    vehicle_id: str,
+    session_id: str,
+    payload: VehiclePositionTickIn,
+) -> VehicleDynamicAdvice:
+    advice = store.navigation_tick(vehicle_id, session_id, payload)
+    if not advice:
+        raise HTTPException(status_code=404, detail="navigation_session_not_found")
+    return advice

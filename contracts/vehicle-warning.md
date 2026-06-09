@@ -1,7 +1,8 @@
 # Vehicle Warning Contract
 
-This version defines the cloud-to-vehicle interface only. It does not include a
-vehicle-side app or simulator.
+This contract defines the cloud-to-vehicle warning payload. The Raspberry Pi
+vehicle simulator consumes navigation-session and dynamic-advice APIs from
+`vehicle-navigation.md`, and may display these warnings as route risks.
 
 ## Publish Conditions
 
