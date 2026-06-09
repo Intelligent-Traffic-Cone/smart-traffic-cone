@@ -1,42 +1,54 @@
 #include "cone_device/ultrasonic_array.h"
 
-#ifndef CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
-#define CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY 1
-#endif
-
 namespace cone_device {
-namespace {
-UltrasonicArrayStatus g_status;
+
+UltrasonicArray::UltrasonicArray(uint8_t trigPin, uint8_t echoPin)
+    : trigPin_(trigPin), echoPin_(echoPin) {}
+
+void UltrasonicArray::begin() {
+  pinMode(trigPin_, OUTPUT);
+  pinMode(echoPin_, INPUT);
+  digitalWrite(trigPin_, LOW);
 }
 
-bool setup_ultrasonic_array(const UltrasonicArrayConfig&) {
-#if CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
-  g_status.enabled = true;
-  g_status.initialized = true;
-  g_status.last_error.clear();
-  for (auto& channel : g_status.channels) {
-    channel.present = true;
+float UltrasonicArray::readDistanceCmOnce() {
+  digitalWrite(trigPin_, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin_, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin_, LOW);
+
+  const unsigned long duration = pulseIn(echoPin_, HIGH, kEchoTimeoutUs);
+  if (duration == 0) {
+    return -1.0f;
   }
-  return true;
-#else
-  g_status = {};
-  g_status.last_error = "disabled";
-  return false;
-#endif
+
+  return (duration * 0.0343f) / 2.0f;
 }
 
-void tick_ultrasonic_array() {
-#if CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
-  // Concrete ranging implementation is added after the ultrasonic model is known.
-#endif
-}
+float UltrasonicArray::readDistanceCmFiltered(uint8_t sampleCount) {
+  if (sampleCount == 0) {
+    return -1.0f;
+  }
 
-void deinit_ultrasonic_array() {
-  g_status = {};
-}
+  float sum = 0.0f;
+  uint8_t validCount = 0;
 
-UltrasonicArrayStatus ultrasonic_array_status() {
-  return g_status;
+  for (uint8_t i = 0; i < sampleCount; ++i) {
+    const float distance = readDistanceCmOnce();
+    if (distance > 0.0f) {
+      sum += distance;
+      ++validCount;
+    }
+    delay(30);
+  }
+
+  if (validCount == 0) {
+    return -1.0f;
+  }
+
+  return sum / validCount;
 }
 
 }  // namespace cone_device
