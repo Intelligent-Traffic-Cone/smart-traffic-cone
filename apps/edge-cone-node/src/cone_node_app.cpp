@@ -17,12 +17,20 @@
 
 namespace {
 constexpr const char* kTag = "cone_node_app";
+constexpr int kUltrasonicTrigPin = 4;
+constexpr int kUltrasonicEchoPin = 5;
 }  // namespace
 
 void ConeNodeApp::setup() {
   cone_device::GpsModuleConfig gps_config;
   cone_device::UltrasonicArrayConfig ultrasonic_config;
   cone_device::CameraModuleConfig camera_config;
+
+  ultrasonic_config.channels[0].trigger_pin = kUltrasonicTrigPin;
+  ultrasonic_config.channels[0].echo_pin = kUltrasonicEchoPin;
+  ultrasonic_config.sample_interval_ms = 500;
+  ultrasonic_config.stale_after_ms = 2000;
+  ultrasonic_config.filter_sample_count = 5;
 
   const bool gps_ok = cone_device::setup_gps(gps_config);
   const bool ultrasonic_ok = cone_device::setup_ultrasonic_array(ultrasonic_config);
