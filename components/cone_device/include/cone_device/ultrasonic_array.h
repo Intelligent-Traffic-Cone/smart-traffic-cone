@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 #include <array>
 #include <cstdint>
 #include <string>
@@ -16,8 +18,9 @@ struct UltrasonicChannelConfig {
 
 struct UltrasonicArrayConfig {
   std::array<UltrasonicChannelConfig, kUltrasonicChannelCount> channels = {};
-  uint32_t sample_interval_ms = 100;
-  uint32_t stale_after_ms = 1000;
+  uint32_t sample_interval_ms = 500;
+  uint32_t stale_after_ms = 2000;
+  uint8_t filter_sample_count = 5;
 };
 
 struct UltrasonicChannelStatus {
@@ -35,6 +38,29 @@ struct UltrasonicArrayStatus {
   std::string last_error;
 };
 
+class UltrasonicArray {
+public:
+  UltrasonicArray(uint8_t trigPin, uint8_t echoPin);
+
+  void begin();
+
+  // 单次读取距离，单位 cm
+  // 返回 -1 表示超时或无有效回波
+  float readDistanceCmOnce();
+
+  // 多次采样平均滤波
+  // sampleCount 为 0 或没有有效回波时返回 -1
+  float readDistanceCmFiltered(uint8_t sampleCount = 5);
+
+private:
+  uint8_t trigPin_;
+  uint8_t echoPin_;
+
+  static constexpr unsigned long kEchoTimeoutUs = 30000UL;
+};
+
+// Preserve the existing telemetry snapshot API while the hardware uses
+// a single HC-SR04 channel.
 bool setup_ultrasonic_array(const UltrasonicArrayConfig& config);
 void tick_ultrasonic_array();
 void deinit_ultrasonic_array();

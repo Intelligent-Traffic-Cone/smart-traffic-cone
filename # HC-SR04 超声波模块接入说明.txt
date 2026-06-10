@@ -1,0 +1,145 @@
+# HC-SR04 超声波模块接入说明
+
+## 1. 功能说明
+该模块用于在 ESP32-S3 上驱动 HC-SR04 超声波传感器，实现距离测量。
+
+支持功能：
+- 单次测距
+- 多次采样平均滤波
+- 超时保护
+- 无回波时返回错误值
+
+## 2. 文件结构
+
+~~~text
+components/
+  cone_device/
+    include/
+      cone_device/
+        ultrasonic_array.h
+    src/
+      ultrasonic_array.cpp
+~~~
+
+## 3. 接线说明
+
+HC-SR04 引脚与 ESP32-S3 的连接关系如下：
+
+- VCC -> 5V
+- GND -> GND
+- TRIG -> GPIO4
+- ECHO -> 降压后接 GPIO5
+
+## 4. 重要注意事项
+
+ESP32-S3 的 GPIO 是 3.3V 逻辑电平，HC-SR04 的 ECHO 通常输出 5V。
+
+因此：
+- 不要把 HC-SR04 的 ECHO 直接接到 ESP32-S3
+- 必须通过电阻分压或电平转换模块后再接入 GPIO
+
+推荐分压方式：
+- ECHO -> 10k 电阻 -> GPIO5
+- GPIO5 -> 20k 电阻 -> GND
+
+## 5. API 说明
+
+### 5.1 构造函数
+
+~~~cpp
+UltrasonicArray(uint8_t trigPin, uint8_t echoPin);
+~~~
+
+### 5.2 初始化
+
+~~~cpp
+void begin();
+~~~
+
+### 5.3 单次测距
+
+~~~cpp
+float readDistanceCmOnce();
+~~~
+
+返回值：
+- 大于 0：有效距离，单位 cm
+- -1：超时或无回波
+
+### 5.4 多次平均测距
+
+~~~cpp
+float readDistanceCmFiltered(uint8_t sampleCount = 5);
+~~~
+
+返回值：
+- 大于 0：平均距离，单位 cm
+- -1：没有有效测量结果
+
+## 6. 使用示例
+
+~~~cpp
+#include <Arduino.h>
+#include "cone_device/ultrasonic_array.h"
+
+static constexpr uint8_t TRIG_PIN = 4;
+static constexpr uint8_t ECHO_PIN = 5;
+
+cone_device::UltrasonicArray ultrasonic(TRIG_PIN, ECHO_PIN);
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  ultrasonic.begin();
+
+  Serial.println("HC-SR04 test started");
+  Serial.printf("TRIG GPIO: %u\n", TRIG_PIN);
+  Serial.printf("ECHO GPIO: %u\n", ECHO_PIN);
+  Serial.println("Important: ECHO must be level-shifted to 3.3V before connecting to ESP32-S3.");
+}
+
+void loop() {
+  const float distanceCm = ultrasonic.readDistanceCmFiltered(5);
+
+  if (distanceCm < 0.0f) {
+    Serial.println("Distance: out of range or no echo");
+  } else {
+    Serial.printf("Distance: %.2f cm\n", distanceCm);
+  }
+
+  delay(500);
+}
+~~~
+
+## 7. 默认参数建议
+- TRIG：GPIO4
+- ECHO：GPIO5
+- 超时时间：30000us
+- 默认采样次数：5
+
+## 8. 调试建议
+
+如果串口一直输出：
+
+~~~text
+Distance: out of range or no echo
+~~~
+
+优先检查：
+- VCC 是否接了 5V
+- GND 是否共地
+- TRIG / ECHO 是否接反
+- ECHO 是否做了 3.3V 降压
+- 目标物是否在合理距离范围内
+
+## 9. 示例输出
+
+~~~text
+HC-SR04 test started
+TRIG GPIO: 4
+ECHO GPIO: 5
+Distance: 23.41 cm
+Distance: 22.97 cm
+Distance: out of range or no echo
+~~~
