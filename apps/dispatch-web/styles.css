@@ -696,6 +696,36 @@ button {
   color: var(--muted);
 }
 
+.snapshot-frame,
+.device-snapshot {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #2b3543;
+  background: #10151d;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.snapshot-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.device-snapshot {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 10px;
+}
+
+.snapshot-frame img,
+.device-snapshot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .timeline,
 .alert-list,
 .fusion-list,
@@ -794,7 +824,7 @@ button {
 }
 
 .device-card {
-  min-height: 150px;
+  min-height: 250px;
 }
 
 .device-meta {

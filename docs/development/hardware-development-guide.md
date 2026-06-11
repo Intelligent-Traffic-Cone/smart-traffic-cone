@@ -22,6 +22,7 @@ The first modules are:
 - `gps_module`: location and freshness.
 - `ultrasonic_array`: four distance channels.
 - `camera_module`: camera availability and frame status.
+- `pwm_servo`: SG90-style PWM servo output.
 - `telemetry_encoder`: structured cloud upload payload.
 
 ## PlatformIO Flags
@@ -32,6 +33,8 @@ Each optional module owns a PlatformIO build flag:
 CONE_DEVICE_ENABLE_GPS
 CONE_DEVICE_ENABLE_ULTRASONIC_ARRAY
 CONE_DEVICE_ENABLE_CAMERA
+CONE_DEVICE_ENABLE_WARNING_LIGHT
+CONE_DEVICE_ENABLE_PWM_SERVO
 ```
 
 Disabled modules must still link and return a status with `last_error` set to
@@ -48,6 +51,8 @@ app-level config when hardware is finalized:
 | Positioning module | SR2631Z3-compatible UART/NMEA path | defaults are UART1 TX17 RX18 @ 115200; override in config if board differs |
 | Ultrasonic modules | four-channel interface | model pending |
 | Camera | generic camera interface | model pending |
+| Warning light | UART command module | V1 uses TX19/RX20 @ 115200 |
+| Pan servos | two SG90-compatible PWM outputs | bottom servo GPIO42, top servo GPIO43, 50Hz PWM |
 
 ## Test Requirements
 

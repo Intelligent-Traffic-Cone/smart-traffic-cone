@@ -15,6 +15,10 @@ Current modules are generic interfaces only:
 - `gps_module`: location, accuracy, freshness, and UART-fed NMEA snapshot.
 - `ultrasonic_array`: four-channel distance snapshot and timeout state.
 - `camera_module`: camera availability and frame capture status.
+- `warning_light`: serial command API for yellow, green, red, buzzer, combined
+  outputs, and global control.
+- `pwm_servo`: two-channel SG90-style PWM servo output for 0-180 degree
+  positioning.
 - `telemetry_encoder`: stable JSON encoder for cloud upload payloads.
 
 Most concrete device models are intentionally not fixed yet. The GPS path now

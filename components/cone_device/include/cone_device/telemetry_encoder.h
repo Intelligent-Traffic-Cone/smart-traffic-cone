@@ -16,6 +16,8 @@ struct TelemetrySnapshot {
   UltrasonicArrayStatus ultrasonic;
   CameraStatus camera;
   std::string network_status = "unknown";
+  std::string camera_image_url;
+  std::string raw_extension_json;
   uint32_t upload_failure_count = 0;
 };
 

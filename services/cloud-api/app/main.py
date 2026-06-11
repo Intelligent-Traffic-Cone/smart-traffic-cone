@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, Query
+from pathlib import Path
+from time import time_ns
+
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .models import (
     AlertHandleIn,
     AlertRecord,
+    ConeImageUploadRecord,
     ConeRecord,
     ConeTelemetryIn,
     ConeTelemetryRecord,
@@ -21,6 +26,11 @@ from .models import (
 )
 from .store import store
 
+BASE_DIR = Path(__file__).resolve().parents[1]
+MEDIA_DIR = BASE_DIR / "storage"
+CONE_IMAGE_DIR = MEDIA_DIR / "cone-images"
+CONE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+
 app = FastAPI(
     title="Smart Traffic Cone Cloud API",
     version="0.2.0",
@@ -34,6 +44,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 
 @app.get("/health")
@@ -52,6 +64,22 @@ def ingest_telemetry(cone_id: str, payload: ConeTelemetryIn) -> ConeTelemetryRec
             cone_id=cone_id,
         )
     return record
+
+
+@app.post("/api/cones/{cone_id}/images", response_model=ConeImageUploadRecord)
+async def upload_cone_image(cone_id: str, request: Request) -> ConeImageUploadRecord:
+    content_type = request.headers.get("content-type", "")
+    if "image/jpeg" not in content_type:
+        raise HTTPException(status_code=415, detail="jpeg_required")
+
+    body = await request.body()
+    if not body:
+        raise HTTPException(status_code=400, detail="empty_image")
+
+    filename = f"{cone_id}-{time_ns()}.jpg"
+    image_path = CONE_IMAGE_DIR / filename
+    image_path.write_bytes(body)
+    return store.record_image_upload(cone_id, f"/media/cone-images/{filename}")
 
 
 @app.get("/api/cones", response_model=list[ConeRecord])

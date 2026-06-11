@@ -31,6 +31,44 @@ std::string reported_at_from_uptime(uint32_t uptime_ms) {
       static_cast<unsigned>(seconds % 60));
   return buffer;
 }
+
+void write_json_string(std::ostringstream& out, const std::string& value) {
+  out << "\"";
+  for (const char c : value) {
+    switch (c) {
+      case '"':
+        out << "\\\"";
+        break;
+      case '\\':
+        out << "\\\\";
+        break;
+      case '\b':
+        out << "\\b";
+        break;
+      case '\f':
+        out << "\\f";
+        break;
+      case '\n':
+        out << "\\n";
+        break;
+      case '\r':
+        out << "\\r";
+        break;
+      case '\t':
+        out << "\\t";
+        break;
+      default:
+        if (static_cast<unsigned char>(c) < 0x20) {
+          char buffer[7];
+          std::snprintf(buffer, sizeof(buffer), "\\u%04x", c);
+          out << buffer;
+        } else {
+          out << c;
+        }
+    }
+  }
+  out << "\"";
+}
 }  // namespace
 
 std::string encode_telemetry_json(const TelemetrySnapshot& snapshot) {
@@ -73,7 +111,12 @@ std::string encode_telemetry_json(const TelemetrySnapshot& snapshot) {
   out << "\"frame_available\":" << bool_json(snapshot.camera.frame_available) << ",";
   out << "\"last_frame_age_ms\":" << snapshot.camera.last_frame_age_ms << ",";
   out << "\"frame_count\":" << snapshot.camera.frame_count << ",";
-  out << "\"image_url\":null";
+  out << "\"image_url\":";
+  if (snapshot.camera_image_url.empty()) {
+    out << "null";
+  } else {
+    write_json_string(out, snapshot.camera_image_url);
+  }
   out << "},";
 
   out << "\"device\":{";
@@ -88,6 +131,9 @@ std::string encode_telemetry_json(const TelemetrySnapshot& snapshot) {
   out << "\"firmware_version\":\"0.1.0\",";
   out << "\"uptime_ms\":" << snapshot.uptime_ms << ",";
   out << "\"upload_failure_count\":" << snapshot.upload_failure_count;
+  if (!snapshot.raw_extension_json.empty()) {
+    out << "," << snapshot.raw_extension_json;
+  }
   out << "}";
   out << "}";
   return out.str();

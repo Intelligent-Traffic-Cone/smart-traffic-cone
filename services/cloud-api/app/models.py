@@ -82,12 +82,19 @@ class ConeTelemetryRecord(ConeTelemetryIn):
     received_at: datetime
 
 
+class ConeImageUploadRecord(BaseModel):
+    cone_id: str
+    image_url: str
+    received_at: datetime
+
+
 class ConeRecord(BaseModel):
     cone_id: str
     status: ConeStatus = ConeStatus.deployed
     last_seen_at: datetime | None = None
     location: LocationPayload = Field(default_factory=LocationPayload)
     current_risk_level: RiskLevel = RiskLevel.low
+    image_url: str | None = None
 
 
 class RoadEventIn(BaseModel):
@@ -153,6 +160,7 @@ class MapConeLayer(BaseModel):
     location: LocationPayload
     current_risk_level: RiskLevel
     last_seen_at: datetime | None = None
+    image_url: str | None = None
 
 
 class MapEventLayer(BaseModel):

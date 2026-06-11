@@ -4,6 +4,8 @@
 .env.*
 !*.env.example
 apps/dispatch-web/config.local.js
+apps/edge-cone-node/src/cone_node.local.h
+services/cloud-api/storage/
 
 # Python
 __pycache__/

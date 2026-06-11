@@ -11,6 +11,7 @@ namespace cone_device {
 constexpr size_t kUltrasonicChannelCount = 4;
 
 struct UltrasonicChannelConfig {
+  bool enabled = false;
   int trigger_pin = -1;
   int echo_pin = -1;
   uint32_t timeout_us = 30000;
@@ -40,7 +41,7 @@ struct UltrasonicArrayStatus {
 
 class UltrasonicArray {
 public:
-  UltrasonicArray(uint8_t trigPin, uint8_t echoPin);
+  UltrasonicArray(uint8_t trigPin, uint8_t echoPin, uint32_t timeoutUs = 30000);
 
   void begin();
 
@@ -55,8 +56,7 @@ public:
 private:
   uint8_t trigPin_;
   uint8_t echoPin_;
-
-  static constexpr unsigned long kEchoTimeoutUs = 30000UL;
+  uint32_t timeoutUs_;
 };
 
 // Preserve the existing telemetry snapshot API while the hardware uses

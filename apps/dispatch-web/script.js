@@ -71,6 +71,7 @@ function cone(coneId, longitude, latitude, status, risk) {
     status,
     current_risk_level: risk,
     last_seen_at: new Date().toISOString(),
+    image_url: null,
     location: point(longitude, latitude)
   };
 }
@@ -254,7 +255,8 @@ function renderDetails() {
   $("#selectedTitle").textContent = `${selected.cone_id} 智能路锥`;
   $("#selectedLevel").textContent = riskText(selected.current_risk_level);
   $("#selectedLevel").className = `level-badge level-${levelClass(selected.current_risk_level)}`;
-  $("#detailBody").innerHTML = [
+  const selectedImage = imageUrl(selected.image_url);
+  const detailRows = [
     ["所属事件", event ? `${event.event_type} / ${event.road_name}` : "暂无事件"],
     ["当前位置", formatLocation(selected.location)],
     ["设备状态", selected.status],
@@ -262,6 +264,12 @@ function renderDetails() {
     ["最近上报", selected.last_seen_at ? new Date(selected.last_seen_at).toLocaleTimeString("zh-CN", { hour12: false }) : "--"],
     ["车端影响", "附近车辆将收到减速、绕行和车道级领航建议"]
   ].map(([key, value]) => `<div class="kv"><span>${key}</span><strong>${value}</strong></div>`).join("");
+  $("#detailBody").innerHTML = `
+    <div class="snapshot-frame">
+      ${selectedImage ? `<img src="${selectedImage}" alt="${selected.cone_id} 最近现场快照">` : "<span>暂无现场快照</span>"}
+    </div>
+    ${detailRows}
+  `;
 }
 
 function renderTimeline() {
@@ -340,6 +348,9 @@ function renderEvents() {
 function renderDevices() {
   $("#deviceGrid").innerHTML = state.layers.cones.map((item) => `
     <article class="device-card">
+      <div class="device-snapshot">
+        ${imageUrl(item.image_url) ? `<img src="${imageUrl(item.image_url)}" alt="${item.cone_id} 最近现场快照">` : "<span>无快照</span>"}
+      </div>
       <strong>${item.cone_id}</strong>
       <span>${item.status} / ${riskText(item.current_risk_level)}</span>
       <div class="device-meta">
@@ -551,6 +562,12 @@ function riskText(level) {
 function formatLocation(location) {
   if (location.longitude == null || location.latitude == null) return "无定位";
   return `${Number(location.longitude).toFixed(5)}, ${Number(location.latitude).toFixed(5)}`;
+}
+
+function imageUrl(url) {
+  if (!url) return "";
+  if (/^https?:\/\//.test(url)) return url;
+  return `${CLOUD_API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 function updateClock() {

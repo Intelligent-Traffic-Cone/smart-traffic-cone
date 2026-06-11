@@ -8,6 +8,7 @@ from .models import (
     AlertHandleIn,
     AlertRecord,
     ConeRecord,
+    ConeImageUploadRecord,
     ConeStatus,
     ConeTelemetryIn,
     ConeTelemetryRecord,
@@ -44,6 +45,7 @@ class InMemoryStore:
         self.syncs: dict[str, ExternalSyncRecord] = {}
         self.risk_segments: dict[str, RiskSegment] = {}
         self.navigation_sessions: dict[str, NavigationSessionRecord] = {}
+        self.latest_image_urls: dict[str, str] = {}
         self.reset_demo_data()
 
     def reset_demo_data(self) -> MapLayersResponse:
@@ -54,6 +56,7 @@ class InMemoryStore:
         self.syncs.clear()
         self.risk_segments.clear()
         self.navigation_sessions.clear()
+        self.latest_image_urls.clear()
         self._telemetry_counter = count(1)
         self._event_counter = count(1)
         self._alert_counter = count(1)
@@ -126,6 +129,10 @@ class InMemoryStore:
         now = datetime.now(timezone.utc)
         payload_data = payload.model_dump()
         payload_data["cone_id"] = cone_id
+        image_url = payload.camera.image_url or self.latest_image_urls.get(cone_id)
+        if image_url:
+            payload_data["camera"]["image_url"] = image_url
+            self.latest_image_urls[cone_id] = image_url
         record = ConeTelemetryRecord(
             **payload_data,
             telemetry_id=f"tel-{next(self._telemetry_counter):06d}",
@@ -134,11 +141,31 @@ class InMemoryStore:
         self.telemetry.append(record)
         self.cones[cone_id] = ConeRecord(
             cone_id=cone_id,
-            last_seen_at=payload.reported_at,
+            last_seen_at=now,
             location=payload.location,
             current_risk_level=self._estimate_risk(payload),
+            image_url=image_url,
         )
         return record
+
+    def record_image_upload(self, cone_id: str, image_url: str) -> ConeImageUploadRecord:
+        now = datetime.now(timezone.utc)
+        self.latest_image_urls[cone_id] = image_url
+        cone = self.cones.get(cone_id)
+        if cone:
+            cone.image_url = image_url
+            cone.last_seen_at = now
+        else:
+            self.cones[cone_id] = ConeRecord(
+                cone_id=cone_id,
+                last_seen_at=now,
+                image_url=image_url,
+            )
+        return ConeImageUploadRecord(
+            cone_id=cone_id,
+            image_url=image_url,
+            received_at=now,
+        )
 
     def create_event(self, payload: RoadEventIn) -> RoadEventRecord:
         now = datetime.now(timezone.utc)
@@ -221,6 +248,7 @@ class InMemoryStore:
                     location=cone.location,
                     current_risk_level=cone.current_risk_level,
                     last_seen_at=cone.last_seen_at,
+                    image_url=cone.image_url or self.latest_image_urls.get(cone.cone_id),
                 )
                 for cone in self.cones.values()
                 if self._inside_bbox(cone.location, bbox)
