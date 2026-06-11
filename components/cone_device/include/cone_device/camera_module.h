@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -20,9 +21,16 @@ struct CameraStatus {
   std::string last_error;
 };
 
+using CameraJpegFrameWriter = bool (*)(const uint8_t* data,
+                                       size_t size,
+                                       void* context);
+
 bool setup_camera(const CameraModuleConfig& config);
 void tick_camera();
 void deinit_camera();
 CameraStatus camera_status();
+bool camera_capture_jpeg(CameraJpegFrameWriter writer,
+                         void* context,
+                         std::string& error);
 
 }  // namespace cone_device
