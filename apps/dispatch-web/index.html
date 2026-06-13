@@ -260,21 +260,31 @@
           <section class="table-panel">
             <div class="section-head">
               <div>
-                <p class="eyebrow">Vehicle Sync</p>
-                <h3>车端导航影响</h3>
+                <p class="eyebrow">Route Dispatch</p>
+                <h3>双路线评估与下发</h3>
               </div>
               <span class="status-pill small" id="apiStatus">API 检测中</span>
             </div>
-            <div class="vehicle-sync-summary" id="vehicleSyncSummary"></div>
+            <div class="route-choice-list" id="routeChoiceList"></div>
+            <div class="dispatch-controls">
+              <label>
+                <span>目标车辆</span>
+                <input id="dispatchVehicleId" value="pi-car-001" autocomplete="off">
+              </label>
+              <button class="text-button" id="dispatchRouteBtn">下发选中路线</button>
+            </div>
           </section>
           <section class="table-panel">
             <div class="section-head">
               <div>
-                <p class="eyebrow">Risk Segments</p>
-                <h3>风险路段与车道建议</h3>
+                <p class="eyebrow">Vehicle Monitor</p>
+                <h3>车辆位置与任务状态</h3>
               </div>
             </div>
-            <div class="event-list" id="riskSegmentList"></div>
+            <div class="vehicle-monitor-map smart-map" id="vehicleMonitorMap">
+              <div class="map-grid"></div>
+            </div>
+            <div class="vehicle-sync-summary" id="vehicleSyncSummary"></div>
           </section>
         </div>
       </section>

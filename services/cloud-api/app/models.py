@@ -174,6 +174,69 @@ class MapLayersResponse(BaseModel):
     vehicle_warnings: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class RouteCandidate(BaseModel):
+    route_id: str
+    name: str
+    description: str = ""
+    points: list[LocationPayload] = Field(min_length=2)
+
+
+class RouteAssessment(RouteCandidate):
+    distance_m: float
+    risk_score: float
+    nearby_cone_ids: list[str] = Field(default_factory=list)
+    reasons: list[str] = Field(default_factory=list)
+    recommended: bool = False
+
+
+class RouteCandidatesResponse(BaseModel):
+    generated_at: datetime
+    recommended_route_id: str
+    routes: list[RouteAssessment] = Field(default_factory=list)
+
+
+class NavigationTaskIn(BaseModel):
+    route_id: str
+
+
+class NavigationTaskRecord(BaseModel):
+    task_id: str
+    vehicle_id: str
+    route: RouteCandidate
+    status: str = "pending"
+    created_at: datetime
+    accepted_at: datetime | None = None
+    completed_at: datetime | None = None
+
+
+class VehiclePositionIn(BaseModel):
+    task_id: str | None = None
+    location: LocationPayload
+    speed_kph: float = Field(default=0, ge=0)
+    heading_deg: float | None = Field(default=None, ge=0, le=360)
+    progress_percent: float = Field(default=0, ge=0, le=100)
+    status: str = "online"
+
+
+class VehiclePositionPoint(BaseModel):
+    location: LocationPayload
+    speed_kph: float = 0
+    reported_at: datetime
+
+
+class VehicleRecord(BaseModel):
+    vehicle_id: str
+    status: str = "offline"
+    online: bool = False
+    current_task_id: str | None = None
+    location: LocationPayload = Field(default_factory=LocationPayload)
+    speed_kph: float = 0
+    heading_deg: float | None = None
+    progress_percent: float = 0
+    last_seen_at: datetime | None = None
+    trace: list[VehiclePositionPoint] = Field(default_factory=list)
+
+
 class NavigationSessionIn(BaseModel):
     vehicle_id: str
     origin: LocationPayload

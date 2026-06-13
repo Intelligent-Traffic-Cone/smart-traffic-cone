@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from itertools import count
+import json
 from math import cos, radians, sqrt
+from pathlib import Path
 
 from .models import (
     AlertHandleIn,
@@ -18,15 +20,23 @@ from .models import (
     MapConeLayer,
     MapEventLayer,
     MapLayersResponse,
+    NavigationTaskIn,
+    NavigationTaskRecord,
     NavigationSessionIn,
     NavigationSessionRecord,
     NearbyConeSummary,
     RiskLevel,
+    RouteAssessment,
+    RouteCandidate,
+    RouteCandidatesResponse,
     RiskSegment,
     RoadEventIn,
     RoadEventRecord,
     VehicleDynamicAdvice,
+    VehiclePositionIn,
+    VehiclePositionPoint,
     VehiclePositionTickIn,
+    VehicleRecord,
 )
 
 
@@ -37,6 +47,7 @@ class InMemoryStore:
         self._alert_counter = count(1)
         self._sync_counter = count(1)
         self._session_counter = count(1)
+        self._task_counter = count(1)
         self.cones: dict[str, ConeRecord] = {}
         self.telemetry: list[ConeTelemetryRecord] = []
         self.events: dict[str, RoadEventRecord] = {}
@@ -44,6 +55,9 @@ class InMemoryStore:
         self.syncs: dict[str, ExternalSyncRecord] = {}
         self.risk_segments: dict[str, RiskSegment] = {}
         self.navigation_sessions: dict[str, NavigationSessionRecord] = {}
+        self.routes = self._load_routes()
+        self.navigation_tasks: dict[str, NavigationTaskRecord] = {}
+        self.vehicles: dict[str, VehicleRecord] = {}
         self.reset_demo_data()
 
     def reset_demo_data(self) -> MapLayersResponse:
@@ -54,11 +68,14 @@ class InMemoryStore:
         self.syncs.clear()
         self.risk_segments.clear()
         self.navigation_sessions.clear()
+        self.navigation_tasks.clear()
+        self.vehicles.clear()
         self._telemetry_counter = count(1)
         self._event_counter = count(1)
         self._alert_counter = count(1)
         self._sync_counter = count(1)
         self._session_counter = count(1)
+        self._task_counter = count(1)
 
         now = datetime.now(timezone.utc)
         cone_points = [
@@ -242,6 +259,139 @@ class InMemoryStore:
             vehicle_warnings=[sync.payload for sync in self.syncs.values()],
         )
 
+    def assess_routes(self) -> RouteCandidatesResponse:
+        assessments: list[RouteAssessment] = []
+        risk_weight = {
+            RiskLevel.low: 1.0,
+            RiskLevel.medium: 8.0,
+            RiskLevel.high: 24.0,
+            RiskLevel.critical: 45.0,
+        }
+        for route in self.routes.values():
+            distance_m = sum(
+                self._distance_m(route.points[index - 1], route.points[index])
+                for index in range(1, len(route.points))
+            )
+            score = distance_m / 1000.0
+            nearby: list[str] = []
+            reasons: list[str] = []
+            for cone in self.cones.values():
+                distance = self._distance_to_route_m(cone.location, route.points)
+                if distance > 120:
+                    continue
+                nearby.append(cone.cone_id)
+                proximity = max(0.15, 1.0 - distance / 120.0)
+                penalty = risk_weight[cone.current_risk_level] * proximity
+                score += penalty
+                if cone.current_risk_level in {RiskLevel.high, RiskLevel.critical}:
+                    reasons.append(
+                        f"{cone.cone_id} {cone.current_risk_level.value} 风险，距路线约 {distance:.0f} 米"
+                    )
+            if not reasons:
+                reasons.append("路线附近未发现高风险路锥")
+            assessments.append(
+                RouteAssessment(
+                    **route.model_dump(),
+                    distance_m=round(distance_m, 1),
+                    risk_score=round(score, 2),
+                    nearby_cone_ids=nearby,
+                    reasons=reasons[:3],
+                )
+            )
+        assessments.sort(key=lambda item: item.risk_score)
+        assessments[0].recommended = True
+        return RouteCandidatesResponse(
+            generated_at=datetime.now(timezone.utc),
+            recommended_route_id=assessments[0].route_id,
+            routes=assessments,
+        )
+
+    def create_navigation_task(
+        self,
+        vehicle_id: str,
+        payload: NavigationTaskIn,
+    ) -> NavigationTaskRecord | None:
+        route = self.routes.get(payload.route_id)
+        if not route:
+            return None
+        now = datetime.now(timezone.utc)
+        for task in self.navigation_tasks.values():
+            if task.vehicle_id == vehicle_id and task.status in {"pending", "accepted", "running", "paused"}:
+                task.status = "replaced"
+        task = NavigationTaskRecord(
+            task_id=f"task-{next(self._task_counter):06d}",
+            vehicle_id=vehicle_id,
+            route=route.model_copy(deep=True),
+            created_at=now,
+        )
+        self.navigation_tasks[task.task_id] = task
+        vehicle = self.vehicles.get(vehicle_id) or VehicleRecord(vehicle_id=vehicle_id)
+        vehicle.current_task_id = task.task_id
+        vehicle.status = "task_pending"
+        self.vehicles[vehicle_id] = vehicle
+        return task
+
+    def current_navigation_task(self, vehicle_id: str) -> NavigationTaskRecord | None:
+        tasks = [
+            task
+            for task in self.navigation_tasks.values()
+            if task.vehicle_id == vehicle_id and task.status in {"pending", "accepted", "running", "paused"}
+        ]
+        if not tasks:
+            return None
+        task = max(tasks, key=lambda item: item.created_at)
+        if task.status == "pending":
+            task.status = "accepted"
+            task.accepted_at = datetime.now(timezone.utc)
+        return task
+
+    def update_vehicle_position(
+        self,
+        vehicle_id: str,
+        payload: VehiclePositionIn,
+    ) -> VehicleRecord | None:
+        task = None
+        if payload.task_id:
+            task = self.navigation_tasks.get(payload.task_id)
+            if not task or task.vehicle_id != vehicle_id:
+                return None
+        now = datetime.now(timezone.utc)
+        vehicle = self.vehicles.get(vehicle_id) or VehicleRecord(vehicle_id=vehicle_id)
+        vehicle.status = payload.status
+        vehicle.online = True
+        vehicle.current_task_id = payload.task_id
+        vehicle.location = payload.location
+        vehicle.speed_kph = payload.speed_kph
+        vehicle.heading_deg = payload.heading_deg
+        vehicle.progress_percent = payload.progress_percent
+        vehicle.last_seen_at = now
+        if payload.location.has_fix:
+            vehicle.trace.append(
+                VehiclePositionPoint(
+                    location=payload.location,
+                    speed_kph=payload.speed_kph,
+                    reported_at=now,
+                )
+            )
+        vehicle.trace = vehicle.trace[-500:]
+        self.vehicles[vehicle_id] = vehicle
+        if task:
+            task.status = payload.status if payload.status in {"paused", "completed", "stopped"} else "running"
+            if task.status == "completed":
+                task.completed_at = now
+        return vehicle
+
+    def list_vehicles(self) -> list[VehicleRecord]:
+        now = datetime.now(timezone.utc)
+        result: list[VehicleRecord] = []
+        for vehicle in self.vehicles.values():
+            item = vehicle.model_copy(deep=True)
+            item.online = bool(item.last_seen_at and now - item.last_seen_at <= timedelta(seconds=5))
+            if not item.online and item.status not in {"completed", "stopped"}:
+                item.status = "offline"
+            result.append(item)
+        return result
+
     def create_navigation_session(
         self,
         vehicle_id: str,
@@ -390,6 +540,59 @@ class InMemoryStore:
         dx = (a.longitude - b.longitude) * lng_scale
         dy = (a.latitude - b.latitude) * lat_scale
         return sqrt(dx * dx + dy * dy)
+
+    def _distance_to_route_m(
+        self,
+        point: LocationPayload,
+        route_points: list[LocationPayload],
+    ) -> float:
+        return min(
+            self._distance_to_segment_m(point, route_points[index - 1], route_points[index])
+            for index in range(1, len(route_points))
+        )
+
+    def _distance_to_segment_m(
+        self,
+        point: LocationPayload,
+        start: LocationPayload,
+        end: LocationPayload,
+    ) -> float:
+        if any(
+            value is None
+            for value in (
+                point.longitude,
+                point.latitude,
+                start.longitude,
+                start.latitude,
+                end.longitude,
+                end.latitude,
+            )
+        ):
+            return 999999.0
+        lat_scale = 111_320.0
+        lng_scale = 111_320.0 * cos(radians(point.latitude or 0))
+        px = (point.longitude or 0) * lng_scale
+        py = (point.latitude or 0) * lat_scale
+        ax = (start.longitude or 0) * lng_scale
+        ay = (start.latitude or 0) * lat_scale
+        bx = (end.longitude or 0) * lng_scale
+        by = (end.latitude or 0) * lat_scale
+        dx = bx - ax
+        dy = by - ay
+        if dx == 0 and dy == 0:
+            return sqrt((px - ax) ** 2 + (py - ay) ** 2)
+        ratio = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+        nearest_x = ax + ratio * dx
+        nearest_y = ay + ratio * dy
+        return sqrt((px - nearest_x) ** 2 + (py - nearest_y) ** 2)
+
+    def _load_routes(self) -> dict[str, RouteCandidate]:
+        route_path = Path(__file__).with_name("routes.json")
+        raw_routes = json.loads(route_path.read_text(encoding="utf-8"))
+        routes = [RouteCandidate.model_validate(item) for item in raw_routes]
+        if len(routes) != 2:
+            raise ValueError("routes.json must define exactly two routes")
+        return {route.route_id: route for route in routes}
 
     def _highest_risk(self, levels: list[RiskLevel]) -> RiskLevel:
         rank = {

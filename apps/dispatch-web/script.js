@@ -55,6 +55,9 @@ const state = {
   view: "overview",
   layers: fallbackData,
   alerts: [],
+  routeCandidates: null,
+  selectedRouteId: null,
+  vehicles: [],
   selectedConeId: "cone-demo-002",
   apiOnline: false,
   demoStep: 0,
@@ -85,7 +88,7 @@ function init() {
   setInterval(updateClock, 1000);
   loadAmap();
   refreshCloudData();
-  setInterval(refreshCloudData, 2500);
+  setInterval(refreshCloudData, 1000);
   renderAll();
 }
 
@@ -132,16 +135,22 @@ function bindEvents() {
   $("#replayBtn").addEventListener("click", () => showToast("正在回放：路锥上报、风险段生成、车辆端轮询建议。"));
   $("#newEventBtn").addEventListener("click", () => showToast("新建事件应先写入 contracts，再同步固件、云端和车端。"));
   $("#handleAllBtn").addEventListener("click", () => showToast("告警已批量确认，风险会进入车辆端建议计算。"));
+  $("#dispatchRouteBtn").addEventListener("click", dispatchSelectedRoute);
 }
 
 async function refreshCloudData() {
   try {
-    const [layers, alerts] = await Promise.all([
+    const [layers, alerts, routeCandidates, vehicles] = await Promise.all([
       api("/api/map/layers"),
-      api("/api/alerts")
+      api("/api/alerts"),
+      api("/api/routes/candidates"),
+      api("/api/vehicles")
     ]);
     state.layers = layers;
     state.alerts = alerts;
+    state.routeCandidates = routeCandidates;
+    state.vehicles = vehicles;
+    if (!state.selectedRouteId) state.selectedRouteId = routeCandidates.recommended_route_id;
     state.apiOnline = true;
   } catch (error) {
     state.apiOnline = false;
@@ -175,6 +184,8 @@ function renderAll() {
   renderDevices();
   renderAnalysis();
   renderVehicleSync();
+  renderRouteChoices();
+  renderVehicleMonitor();
   renderAmapLayers();
 }
 
@@ -214,7 +225,8 @@ function renderHero() {
 function renderMap(mapId) {
   const map = $(`#${mapId}`);
   if (!map) return;
-  $$(".cone, .vehicle, .person", map).forEach((node) => node.remove());
+  $$(".cone, .vehicle, .person, .route-overlay", map).forEach((node) => node.remove());
+  renderRouteOverlay(map, false);
 
   const box = boundsToPercentBox(eventBoundary());
   placeBox(mapId === "largeMap" ? $("#largeEventZone") : $("#eventZone"), box);
@@ -240,10 +252,14 @@ function renderMap(mapId) {
     map.appendChild(button);
   });
 
+  const liveVehicle = state.vehicles[0];
+  const vehiclePosition = liveVehicle?.location?.has_fix
+    ? lngLatToPercent(liveVehicle.location)
+    : { x: 31, y: 65 };
   const vehicle = document.createElement("div");
   vehicle.className = "vehicle";
-  vehicle.style.left = "31%";
-  vehicle.style.top = "65%";
+  vehicle.style.left = `${vehiclePosition.x}%`;
+  vehicle.style.top = `${vehiclePosition.y}%`;
   map.appendChild(vehicle);
 }
 
@@ -373,25 +389,107 @@ function renderAnalysis() {
 }
 
 function renderVehicleSync() {
-  const event = state.layers.events[0];
-  const segment = state.layers.risk_segments[0];
+  const vehicle = state.vehicles[0];
   $("#vehicleSyncSummary").innerHTML = [
     ["云端地址", CLOUD_API_BASE_URL],
-    ["导航开始", "POST /api/vehicles/{vehicle_id}/navigation-sessions"],
-    ["行驶轮询", "POST /api/vehicles/{vehicle_id}/navigation-sessions/{session_id}/tick"],
-    ["当前事件", event ? `${event.event_id} / ${event.road_name}` : "暂无事件"],
-    ["建议动作", segment ? segment.suggested_action : "keep_lane"],
-    ["车道影响", event ? event.affected_lanes.join(", ") : "--"]
+    ["车辆编号", vehicle?.vehicle_id || "等待车辆连接"],
+    ["连接状态", vehicle ? (vehicle.online ? "在线" : "离线") : "--"],
+    ["任务状态", vehicle?.status || "--"],
+    ["任务编号", vehicle?.current_task_id || "--"],
+    ["当前位置", vehicle ? formatLocation(vehicle.location) : "--"],
+    ["速度", vehicle ? `${Number(vehicle.speed_kph).toFixed(1)} km/h` : "--"],
+    ["进度", vehicle ? `${Number(vehicle.progress_percent).toFixed(1)}%` : "--"],
+    ["最后上报", vehicle?.last_seen_at ? new Date(vehicle.last_seen_at).toLocaleTimeString("zh-CN", { hour12: false }) : "--"]
   ].map(([key, value]) => `<div class="kv"><span>${key}</span><strong>${value}</strong></div>`).join("");
+}
 
-  $("#riskSegmentList").innerHTML = state.layers.risk_segments.map((item) => `
-    <div class="event-row">
-      <strong>${item.segment_id}</strong>
-      <div><strong>${item.road_name}</strong><span>${item.suggested_action}</span></div>
-      <span class="level-badge level-${levelClass(item.level)}">${riskText(item.level)}</span>
-      <span>${item.speed_limit_kph || "--"} km/h</span>
-    </div>
-  `).join("");
+function renderRouteChoices() {
+  const routes = state.routeCandidates?.routes || [];
+  $("#routeChoiceList").innerHTML = routes.length ? routes.map((route) => `
+    <label class="route-choice ${state.selectedRouteId === route.route_id ? "is-selected" : ""}">
+      <input type="radio" name="routeChoice" value="${route.route_id}" ${state.selectedRouteId === route.route_id ? "checked" : ""}>
+      <div>
+        <strong>${route.name}${route.recommended ? " / 系统推荐" : ""}</strong>
+        <span>${route.description} / ${(route.distance_m / 1000).toFixed(2)} km</span>
+        <p>${route.reasons.join("；")}</p>
+      </div>
+      <strong class="route-score">${route.risk_score.toFixed(2)} 分</strong>
+    </label>
+  `).join("") : "<div class=\"route-choice\"><div></div><strong>等待云端路线评估</strong><span>--</span></div>";
+  $$("input[name=routeChoice]").forEach((input) => {
+    input.addEventListener("change", () => {
+      state.selectedRouteId = input.value;
+      renderRouteChoices();
+      renderAllMaps();
+    });
+  });
+}
+
+async function dispatchSelectedRoute() {
+  const vehicleId = $("#dispatchVehicleId").value.trim();
+  if (!vehicleId || !state.selectedRouteId) {
+    showToast("请填写车辆编号并选择路线。");
+    return;
+  }
+  try {
+    const task = await api(`/api/vehicles/${encodeURIComponent(vehicleId)}/navigation-tasks`, {
+      method: "POST",
+      body: JSON.stringify({ route_id: state.selectedRouteId })
+    });
+    showToast(`任务 ${task.task_id} 已下发，等待车辆领取。`);
+    await refreshCloudData();
+  } catch (error) {
+    showToast("路线下发失败，请检查云端服务。");
+  }
+}
+
+function renderVehicleMonitor() {
+  const map = $("#vehicleMonitorMap");
+  $$(".route-overlay, .vehicle", map).forEach((node) => node.remove());
+  renderRouteOverlay(map, true);
+  const vehicle = state.vehicles[0];
+  if (!vehicle?.location?.has_fix) return;
+  const position = lngLatToPercent(vehicle.location);
+  const marker = document.createElement("div");
+  marker.className = "vehicle";
+  marker.style.left = `${position.x}%`;
+  marker.style.top = `${position.y}%`;
+  map.appendChild(marker);
+}
+
+function renderRouteOverlay(map, includeTrace) {
+  const routes = state.routeCandidates?.routes || [];
+  if (!routes.length) return;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "route-overlay");
+  svg.setAttribute("viewBox", "0 0 100 100");
+  routes.forEach((route) => {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    line.setAttribute("points", route.points.map((point) => {
+      const position = lngLatToPercent(point);
+      return `${position.x},${position.y}`;
+    }).join(" "));
+    line.setAttribute("class", `${route.route_id === "route-a" ? "route-a" : "route-b"} ${route.route_id === state.selectedRouteId ? "selected" : "muted"}`);
+    svg.appendChild(line);
+  });
+  const trace = (state.vehicles[0]?.trace || []).filter((item) => item.location?.has_fix);
+  if (includeTrace && trace.length > 1) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    line.setAttribute("points", trace.map((item) => {
+      const position = lngLatToPercent(item.location);
+      return `${position.x},${position.y}`;
+    }).join(" "));
+    line.setAttribute("class", "trace-line");
+    svg.appendChild(line);
+  }
+  map.appendChild(svg);
+}
+
+function renderAllMaps() {
+  renderMap("smartMap");
+  renderMap("largeMap");
+  renderVehicleMonitor();
+  renderAmapLayers();
 }
 
 function loadAmap() {
@@ -429,6 +527,14 @@ function renderAmapLayers() {
   if (!state.map || !window.AMap) return;
   if (state.amapLayers.length) state.map.remove(state.amapLayers);
   const layers = [];
+  (state.routeCandidates?.routes || []).forEach((route) => {
+    layers.push(new AMap.Polyline({
+      path: route.points.map((item) => [item.longitude, item.latitude]),
+      strokeColor: route.route_id === "route-a" ? "#4aa8ff" : "#48d7d0",
+      strokeWeight: route.route_id === state.selectedRouteId ? 7 : 4,
+      strokeOpacity: route.route_id === state.selectedRouteId ? 0.95 : 0.4
+    }));
+  });
   state.layers.events.forEach((event) => {
     if (!event.boundary?.length) return;
     layers.push(new AMap.Polygon({
@@ -454,6 +560,15 @@ function renderAmapLayers() {
       offset: new AMap.Pixel(-10, -24)
     }));
   });
+  const vehicle = state.vehicles[0];
+  if (vehicle?.location?.has_fix) {
+    layers.push(new AMap.Marker({
+      position: [vehicle.location.longitude, vehicle.location.latitude],
+      content: "<div class=\"amap-vehicle\"></div>",
+      offset: new AMap.Pixel(-20, -11),
+      zIndex: 30
+    }));
+  }
   state.map.add(layers);
   state.amapLayers = layers;
   if (layers.length) state.map.setFitView(layers, false, [60, 60, 60, 60], 16);

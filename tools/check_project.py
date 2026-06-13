@@ -25,10 +25,12 @@ def main() -> None:
         "apps/dispatch-web/index.html",
         "apps/pi-vehicle-simulator/index.html",
         "apps/pi-vehicle-simulator/server.py",
+        "apps/vehicle-desktop-simulator/app.py",
         "components/cone_device/library.json",
         "services/cloud-api/app/main.py",
         "contracts/telemetry.schema.json",
         "contracts/vehicle-navigation.md",
+        "contracts/vehicle-dispatch.md",
         "contracts/examples/telemetry.sample.json",
         "contracts/examples/navigation-session.sample.json",
         "contracts/examples/navigation-tick.sample.json",
@@ -58,6 +60,7 @@ def main() -> None:
         "services/cloud-api/app/models.py",
         "services/cloud-api/app/store.py",
         "apps/pi-vehicle-simulator/server.py",
+        "apps/vehicle-desktop-simulator/app.py",
     ]:
         py_compile.compile(str(require(path)), doraise=True)
 
@@ -66,6 +69,10 @@ def main() -> None:
 
     NavigationSessionIn.model_validate(nav_session)
     VehiclePositionTickIn.model_validate(nav_tick)
+
+    routes = json.loads(require("services/cloud-api/app/routes.json").read_text(encoding="utf-8"))
+    if len(routes) != 2:
+        raise SystemExit("routes.json must contain exactly two route candidates")
 
     print("project skeleton checks passed")
 

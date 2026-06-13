@@ -11,13 +11,18 @@ from .models import (
     ConeTelemetryRecord,
     ExternalSyncRecord,
     MapLayersResponse,
+    NavigationTaskIn,
+    NavigationTaskRecord,
     NavigationSessionIn,
     NavigationSessionRecord,
     RiskLevel,
     RoadEventIn,
     RoadEventRecord,
     VehicleDynamicAdvice,
+    VehiclePositionIn,
     VehiclePositionTickIn,
+    VehicleRecord,
+    RouteCandidatesResponse,
 )
 from .store import store
 
@@ -112,6 +117,46 @@ def reset_demo() -> MapLayersResponse:
 @app.get("/api/map/layers", response_model=MapLayersResponse)
 def map_layers(bbox: str | None = Query(default=None)) -> MapLayersResponse:
     return store.map_layers(bbox=bbox)
+
+
+@app.get("/api/routes/candidates", response_model=RouteCandidatesResponse)
+def route_candidates() -> RouteCandidatesResponse:
+    return store.assess_routes()
+
+
+@app.post(
+    "/api/vehicles/{vehicle_id}/navigation-tasks",
+    response_model=NavigationTaskRecord,
+)
+def create_navigation_task(
+    vehicle_id: str,
+    payload: NavigationTaskIn,
+) -> NavigationTaskRecord:
+    task = store.create_navigation_task(vehicle_id, payload)
+    if not task:
+        raise HTTPException(status_code=404, detail="route_not_found")
+    return task
+
+
+@app.get(
+    "/api/vehicles/{vehicle_id}/navigation-tasks/current",
+    response_model=NavigationTaskRecord | None,
+)
+def current_navigation_task(vehicle_id: str) -> NavigationTaskRecord | None:
+    return store.current_navigation_task(vehicle_id)
+
+
+@app.post("/api/vehicles/{vehicle_id}/position", response_model=VehicleRecord)
+def update_vehicle_position(vehicle_id: str, payload: VehiclePositionIn) -> VehicleRecord:
+    vehicle = store.update_vehicle_position(vehicle_id, payload)
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="navigation_task_not_found")
+    return vehicle
+
+
+@app.get("/api/vehicles", response_model=list[VehicleRecord])
+def list_vehicles() -> list[VehicleRecord]:
+    return store.list_vehicles()
 
 
 @app.post(

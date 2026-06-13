@@ -1,0 +1,30 @@
+[
+  {
+    "route_id": "route-a",
+    "name": "候选路线 A（主路）",
+    "description": "沿主路通过施工区域，距离较短。",
+    "points": [
+      {"longitude": 116.39658, "latitude": 39.90974, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39696, "latitude": 39.90958, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39735, "latitude": 39.90940, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39774, "latitude": 39.90922, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39815, "latitude": 39.90902, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39862, "latitude": 39.90882, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39908, "latitude": 39.90866, "accuracy_m": 3, "has_fix": true}
+    ]
+  },
+  {
+    "route_id": "route-b",
+    "name": "候选路线 B（绕行）",
+    "description": "从施工区域北侧绕行，距离稍长。",
+    "points": [
+      {"longitude": 116.39658, "latitude": 39.90974, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39692, "latitude": 39.91002, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39745, "latitude": 39.91013, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39808, "latitude": 39.91004, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39858, "latitude": 39.90973, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39888, "latitude": 39.90920, "accuracy_m": 3, "has_fix": true},
+      {"longitude": 116.39908, "latitude": 39.90866, "accuracy_m": 3, "has_fix": true}
+    ]
+  }
+]

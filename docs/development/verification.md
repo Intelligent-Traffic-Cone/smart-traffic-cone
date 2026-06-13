@@ -18,6 +18,13 @@ Check cloud API syntax:
 python -m py_compile .\services\cloud-api\app\main.py .\services\cloud-api\app\models.py .\services\cloud-api\app\store.py
 ```
 
+Run vehicle dispatch tests:
+
+```bash
+cd services/cloud-api
+python3 -m unittest discover -s tests
+```
+
 Build firmware after PlatformIO is installed:
 
 ```powershell

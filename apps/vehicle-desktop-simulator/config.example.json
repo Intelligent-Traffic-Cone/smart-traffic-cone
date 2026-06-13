@@ -1,0 +1,6 @@
+{
+  "cloud_api_base_url": "http://192.168.1.100:8000",
+  "vehicle_id": "pi-car-001",
+  "poll_interval_ms": 1000,
+  "default_speed_kph": 30
+}

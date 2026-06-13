@@ -49,3 +49,10 @@ speed, and lane; the cloud returns route adjustment, lane guidance, nearby cone
 summaries, and active risk segments.
 
 Payloads are documented in `contracts/vehicle-navigation.md`.
+
+## Vehicle Dispatch and Position Flow
+
+The fixed dual-route dispatch loop is documented in
+`contracts/vehicle-dispatch.md`. Dispatch Web creates a navigation task, the
+desktop simulator polls the current task, and then uploads its simulated
+position once per second. This first version also uses HTTP polling.

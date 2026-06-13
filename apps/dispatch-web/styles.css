@@ -315,6 +315,122 @@ button {
   gap: 16px;
 }
 
+.route-choice-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.route-choice {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 90px;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid #2b3543;
+  background: #141a22;
+  cursor: pointer;
+}
+
+.route-choice.is-selected {
+  border-color: var(--blue);
+  background: #172538;
+}
+
+.route-choice input {
+  margin-top: 4px;
+}
+
+.route-choice strong,
+.route-choice span {
+  display: block;
+}
+
+.route-choice p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.route-score {
+  text-align: right;
+  color: var(--amber);
+}
+
+.dispatch-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 18px;
+}
+
+.dispatch-controls label,
+.dispatch-controls label span {
+  display: block;
+}
+
+.dispatch-controls label span {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dispatch-controls input {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  color: var(--text);
+  border: 1px solid var(--line);
+  background: #10151d;
+}
+
+.vehicle-monitor-map {
+  height: 390px;
+  margin-top: 14px;
+  flex: none;
+}
+
+.route-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.route-overlay polyline {
+  fill: none;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.route-overlay .route-a {
+  stroke: var(--blue);
+}
+
+.route-overlay .route-b {
+  stroke: var(--cyan);
+}
+
+.route-overlay .muted {
+  opacity: 0.35;
+  stroke-width: 0.8;
+}
+
+.route-overlay .selected {
+  opacity: 1;
+  stroke-width: 2;
+}
+
+.route-overlay .trace-line {
+  stroke: #ffffff;
+  stroke-width: 1;
+  stroke-dasharray: 2 1;
+}
+
 .map-panel,
 .detail-panel,
 .timeline-panel,

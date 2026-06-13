@@ -13,6 +13,8 @@ apps/
   gps-test-pio/       独立的 PlatformIO GPS UART 台架测试项目。
   pi-vehicle-simulator/
                       树莓派车辆端导航模拟器。
+  vehicle-desktop-simulator/
+                      Linux/树莓派车辆桌面上位机。
 components/
   cone_device/        可复用的硬件模块接口。
 services/
@@ -30,6 +32,15 @@ docs/
 
 ## 快速开始
 
+一键启动云端、管理 Web 和车辆桌面上位机：
+
+```bash
+chmod +x start_demo.sh
+./start_demo.sh
+```
+
+脚本会自动使用当前局域网 IP 写入本地配置。按 `Ctrl+C` 可停止全部服务。
+
 固件：
 
 ```powershell
@@ -46,12 +57,12 @@ pio run -e esp32-s3-devkitc-1
 
 云端 API：
 
-```powershell
+```bash
 cd services/cloud-api
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 调度网页：
@@ -70,10 +81,22 @@ python server.py
 
 然后打开 `http://127.0.0.1:8090`。车辆端会在导航开始时创建导航会话，并在模拟行驶中通过 HTTP 轮询云端动态建议。
 
+Linux/树莓派桌面上位机：
+
+```bash
+cd apps/vehicle-desktop-simulator
+cp config.example.json config.local.json
+python3 app.py
+```
+
+在 `config.local.json` 中把云端地址改为管理电脑的局域网 IP。管理 Web
+在“车辆协同”页面评估两条固定路线并下发，上位机领取路线后模拟行驶和上传位置。
+
 ## 开发边界
 
 - `apps/edge-cone-node` 负责产品编排和上传调度。
 - `apps/pi-vehicle-simulator` 负责车辆端导航、路径调整和车道级领航模拟。
+- `apps/vehicle-desktop-simulator` 负责局域网车辆任务领取、位置模拟和桌面展示。
 - `apps/dispatch-web` 负责调度中心静态演示和云端 API 数据展示。
 - `components/cone_device` 负责可复用的硬件接口和模块状态。
 - `services/cloud-api` 负责云端 HTTP API 行为和 OpenAPI 文档。
